@@ -1,16 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { fetchOrderData } from "./services/network";
-import OrderOverview from "./components/OrderOverview";
-import SwapDetails from "./components/SwapDetails";
-import AdditionalInfo from "./components/AdditionalInfo";
+import TransactionDetails from "./components/TransactionDetails";
+import SwapCard from "./components/SwapCard";
 import { OrderData } from "./types";
+import AdditionalData from "./components/AdditionalData";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<OrderData | null>(null);
-  const [showMoreOverview, setShowMoreOverview] = useState(false);
-  const [showMoreSource, setShowMoreSource] = useState(false);
-  const [showMoreDest, setShowMoreDest] = useState(false);
+  const [showMoreSend, setShowMoreSend] = useState(false);
+  const [showMoreReceive, setShowMoreReceive] = useState(false);
   const [showMoreAdditional, setShowMoreAdditional] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -24,9 +23,8 @@ function App() {
         e.preventDefault();
         setShowSearch(true);
         setSearchResults(null);
-        setShowMoreOverview(false);
-        setShowMoreSource(false);
-        setShowMoreDest(false);
+        setShowMoreSend(false);
+        setShowMoreReceive(false);
         setShowMoreAdditional(false);
         setSearchQuery("");
         setTimeout(() => inputRef.current?.focus(), 0);
@@ -39,7 +37,6 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Hide modal and reset searchQuery on close
   const closeModal = () => {
     setShowSearch(false);
     setSearchQuery("");
@@ -69,18 +66,6 @@ function App() {
     });
   };
 
-  const getChainColor = (chain: string) => {
-    switch (chain.toLowerCase()) {
-      case "arbitrum":
-        return "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25";
-      case "bitcoin":
-        return "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25";
-      default:
-        return "bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-lg shadow-gray-500/25";
-    }
-  };
-
-  // Modal overlay click closes modal
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       closeModal();
@@ -89,7 +74,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-900">
-      {/* Zen/CMDK Search Modal */}
+      {/* Search Modal */}
       {showSearch && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadein"
@@ -130,7 +115,7 @@ function App() {
         </div>
       )}
 
-      {/* Shortcut hint (centered) */}
+      {/* Search Hint */}
       {!showSearch && !searchResults && (
         <div className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none">
           <div className="text-slate-300 text-lg bg-slate-800/90 px-6 py-4 rounded-2xl shadow-2xl select-none flex items-center space-x-3 border border-slate-700/60">
@@ -149,42 +134,51 @@ function App() {
 
       {/* Results Section */}
       {!showSearch && searchResults && (
-        <div className="max-w-5xl mx-auto py-12 px-4">
-          <OrderOverview
-            createOrder={searchResults.result.create_order}
-            createdAt={searchResults.result.created_at}
-            showMore={showMoreOverview}
-            setShowMore={setShowMoreOverview}
-            formatDate={formatDate}
-          />
-          <div className="h-8" />
-          <SwapDetails
-            swap={searchResults.result.source_swap}
-            chainColor={getChainColor(searchResults.result.source_swap.chain)}
-            title={`Source Swap (${searchResults.result.source_swap.chain})`}
-            showMore={showMoreSource}
-            setShowMore={setShowMoreSource}
-            formatDate={formatDate}
-          />
-          <div className="h-8" />
-          <SwapDetails
-            swap={searchResults.result.destination_swap}
-            chainColor={getChainColor(
-              searchResults.result.destination_swap.chain
-            )}
-            title={`Destination Swap (${searchResults.result.destination_swap.chain})`}
-            showMore={showMoreDest}
-            setShowMore={setShowMoreDest}
-            formatDate={formatDate}
-          />
-          <div className="h-8" />
-          <AdditionalInfo
-            additionalData={searchResults.result.create_order.additional_data}
-            showMore={showMoreAdditional}
-            setShowMore={setShowMoreAdditional}
-          />
+        <div className="min-h-screen w-full flex justify-center bg-slate-900 overflow-auto">
+          <div className="max-w-7xl w-full px-2 py-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column - Transaction Details + Additional Data */}
+              <div className="space-y-4">
+                <TransactionDetails
+                  createOrder={searchResults.result.create_order}
+                  createdAt={searchResults.result.created_at}
+                  formatDate={formatDate}
+                />
+                <AdditionalData
+                  additionalData={
+                    searchResults.result.create_order.additional_data
+                  }
+                  showMore={showMoreAdditional}
+                  setShowMore={setShowMoreAdditional}
+                />
+              </div>
+
+              {/* Right Column - Send/Receive Cards */}
+              <div className="space-y-4">
+                <SwapCard
+                  title="Send"
+                  swap={searchResults.result.source_swap}
+                  amount={searchResults.result.create_order.source_amount}
+                  chain={searchResults.result.create_order.source_chain}
+                  showMore={showMoreSend}
+                  setShowMore={setShowMoreSend}
+                  formatDate={formatDate}
+                />
+                <SwapCard
+                  title="Receive"
+                  swap={searchResults.result.destination_swap}
+                  amount={searchResults.result.create_order.destination_amount}
+                  chain={searchResults.result.create_order.destination_chain}
+                  showMore={showMoreReceive}
+                  setShowMore={setShowMoreReceive}
+                  formatDate={formatDate}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       )}
+
       {/* Animations */}
       <style>{`
         @keyframes fadein {
