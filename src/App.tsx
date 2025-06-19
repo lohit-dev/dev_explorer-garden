@@ -4,6 +4,7 @@ import TransactionDetails from "./components/TransactionDetails";
 import SwapCard from "./components/SwapCard";
 import { OrderData } from "./types";
 import AdditionalData from "./components/AdditionalData";
+import { formatDate } from "./utils";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,17 +54,6 @@ function App() {
       setSearchResults(null);
     }
     setIsSearching(false);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -178,24 +168,6 @@ function App() {
           </div>
         </div>
       )}
-
-      {/* Animations */}
-      <style>{`
-        @keyframes fadein {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .animate-fadein {
-          animation: fadein 0.2s;
-        }
-        @keyframes cmdkmodal {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-cmdkmodal {
-          animation: cmdkmodal 0.18s cubic-bezier(.4,0,.2,1);
-        }
-      `}</style>
     </div>
   );
 }
