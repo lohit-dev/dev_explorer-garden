@@ -97,12 +97,6 @@ function App() {
         >
           <div className="bg-slate-800/95 rounded-2xl shadow-2xl p-0 w-full max-w-lg mx-auto flex flex-col items-center transition-transform duration-200 scale-95 animate-cmdkmodal">
             <div className="w-full flex flex-col items-center px-8 py-10">
-              <span
-                className="text-4xl mb-6 select-none"
-                aria-label="cherry blossom"
-              >
-                🌸
-              </span>
               <input
                 ref={inputRef}
                 type="text"
