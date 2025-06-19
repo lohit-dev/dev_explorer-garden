@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Search } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { fetchOrderData } from "./services/network";
 import OrderOverview from "./components/OrderOverview";
 import SwapDetails from "./components/SwapDetails";
@@ -14,19 +13,49 @@ function App() {
   const [showMoreDest, setShowMoreDest] = useState(false);
   const [showMoreAdditional, setShowMoreAdditional] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const isValidOrderId = searchQuery.length === 64;
 
-  const handleSearch = async () => {
-    if (searchQuery.trim()) {
-      setIsSearching(true);
-      try {
-        const data = await fetchOrderData(searchQuery.trim());
-        setSearchResults(data);
-      } catch {
+  // Keyboard shortcut for Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setShowSearch(true);
         setSearchResults(null);
+        setShowMoreOverview(false);
+        setShowMoreSource(false);
+        setShowMoreDest(false);
+        setShowMoreAdditional(false);
+        setSearchQuery("");
+        setTimeout(() => inputRef.current?.focus(), 0);
       }
-      setIsSearching(false);
+      if (e.key === "Escape") {
+        setShowSearch(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Hide modal and reset searchQuery on close
+  const closeModal = () => {
+    setShowSearch(false);
+    setSearchQuery("");
+  };
+
+  const handleSearch = async () => {
+    if (!isValidOrderId) return;
+    setIsSearching(true);
+    try {
+      const data = await fetchOrderData(searchQuery.trim());
+      setSearchResults(data);
+      setShowSearch(false);
+    } catch {
+      setSearchResults(null);
     }
+    setIsSearching(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -51,119 +80,134 @@ function App() {
     }
   };
 
+  // Modal overlay click closes modal
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      closeModal();
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+    <div className="min-h-screen bg-slate-900">
+      {/* Zen/CMDK Search Modal */}
+      {showSearch && (
         <div
-          className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse"
-          style={{ animationDelay: "2s" }}
-        ></div>
-      </div>
-
-      {/* Header */}
-      <div className="relative z-10 border-b border-slate-700/50 backdrop-blur-xl bg-slate-900/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-                  🌸
-                </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full animate-pulse"></div>
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">
-                  Garden Explorer
-                </h1>
-                <p className="text-slate-400 mt-1">
-                  Developer-friendly transaction explorer
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search Section */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 mb-12 shadow-2xl shadow-slate-900/50">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadein"
+          onClick={handleOverlayClick}
+        >
+          <div className="bg-slate-800/95 rounded-2xl shadow-2xl p-0 w-full max-w-lg mx-auto flex flex-col items-center transition-transform duration-200 scale-95 animate-cmdkmodal">
+            <div className="w-full flex flex-col items-center px-8 py-10">
+              <span
+                className="text-4xl mb-6 select-none"
+                aria-label="cherry blossom"
+              >
+                🌸
+              </span>
               <input
+                ref={inputRef}
                 type="text"
-                placeholder="Enter Order ID here..."
+                placeholder="Paste or type Order ID…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 maxLength={64}
+                autoFocus
+                spellCheck={false}
+                autoComplete="off"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && isValidOrderId && !isSearching) {
                     handleSearch();
                   }
+                  if (e.key === "Escape") {
+                    closeModal();
+                  }
                 }}
-                className="w-full px-6 py-4 bg-slate-900/50 border border-slate-600/50 rounded-2xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all duration-300 text-white placeholder-slate-400 backdrop-blur-sm"
+                className="w-full text-center text-lg px-6 py-4 bg-slate-900/80 border border-slate-700/60 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all duration-200 text-white placeholder-slate-400 shadow-md"
               />
               {!isValidOrderId && searchQuery.length > 0 && (
-                <div className="text-red-400 text-sm mt-2">
+                <div className="text-red-400 text-sm mt-3">
                   Order ID must be exactly 64 characters.
                 </div>
               )}
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-            </div>
-            <button
-              onClick={handleSearch}
-              disabled={isSearching || !isValidOrderId}
-              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 flex items-center justify-center space-x-3 font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed min-w-[140px]"
-            >
-              {isSearching ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <Search size={20} />
-                  <span>Search</span>
-                </>
+              {isSearching && (
+                <div className="mt-4 w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               )}
-            </button>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Results Section */}
-        {searchResults && (
-          <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700">
-            <OrderOverview
-              createOrder={searchResults.result.create_order}
-              createdAt={searchResults.result.created_at}
-              showMore={showMoreOverview}
-              setShowMore={setShowMoreOverview}
-              formatDate={formatDate}
-            />
-            <SwapDetails
-              swap={searchResults.result.source_swap}
-              chainColor={getChainColor(searchResults.result.source_swap.chain)}
-              title={`Source Swap (${searchResults.result.source_swap.chain})`}
-              showMore={showMoreSource}
-              setShowMore={setShowMoreSource}
-              formatDate={formatDate}
-            />
-            <SwapDetails
-              swap={searchResults.result.destination_swap}
-              chainColor={getChainColor(
-                searchResults.result.destination_swap.chain
-              )}
-              title={`Destination Swap (${searchResults.result.destination_swap.chain})`}
-              showMore={showMoreDest}
-              setShowMore={setShowMoreDest}
-              formatDate={formatDate}
-            />
-            <AdditionalInfo
-              additionalData={searchResults.result.create_order.additional_data}
-              showMore={showMoreAdditional}
-              setShowMore={setShowMoreAdditional}
-            />
+      {/* Shortcut hint (centered) */}
+      {!showSearch && !searchResults && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none">
+          <div className="text-slate-300 text-lg bg-slate-800/90 px-6 py-4 rounded-2xl shadow-2xl select-none flex items-center space-x-3 border border-slate-700/60">
+            <span>Press</span>
+            <kbd className="px-2 py-1 bg-slate-700 rounded text-xl font-mono">
+              {navigator.platform.includes("Mac") ? "⌘" : "Ctrl"}
+            </kbd>
+            <span className="text-xl font-bold">+</span>
+            <kbd className="px-2 py-1 bg-slate-700 rounded text-xl font-mono">
+              K
+            </kbd>
+            <span>to search</span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Results Section */}
+      {!showSearch && searchResults && (
+        <div className="max-w-5xl mx-auto py-12 px-4">
+          <OrderOverview
+            createOrder={searchResults.result.create_order}
+            createdAt={searchResults.result.created_at}
+            showMore={showMoreOverview}
+            setShowMore={setShowMoreOverview}
+            formatDate={formatDate}
+          />
+          <div className="h-8" />
+          <SwapDetails
+            swap={searchResults.result.source_swap}
+            chainColor={getChainColor(searchResults.result.source_swap.chain)}
+            title={`Source Swap (${searchResults.result.source_swap.chain})`}
+            showMore={showMoreSource}
+            setShowMore={setShowMoreSource}
+            formatDate={formatDate}
+          />
+          <div className="h-8" />
+          <SwapDetails
+            swap={searchResults.result.destination_swap}
+            chainColor={getChainColor(
+              searchResults.result.destination_swap.chain
+            )}
+            title={`Destination Swap (${searchResults.result.destination_swap.chain})`}
+            showMore={showMoreDest}
+            setShowMore={setShowMoreDest}
+            formatDate={formatDate}
+          />
+          <div className="h-8" />
+          <AdditionalInfo
+            additionalData={searchResults.result.create_order.additional_data}
+            showMore={showMoreAdditional}
+            setShowMore={setShowMoreAdditional}
+          />
+        </div>
+      )}
+      {/* Animations */}
+      <style>{`
+        @keyframes fadein {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .animate-fadein {
+          animation: fadein 0.2s;
+        }
+        @keyframes cmdkmodal {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-cmdkmodal {
+          animation: cmdkmodal 0.18s cubic-bezier(.4,0,.2,1);
+        }
+      `}</style>
     </div>
   );
 }
