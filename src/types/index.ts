@@ -1,0 +1,93 @@
+
+export interface OrderData {
+    status: string;
+    result: {
+        created_at: string;
+        updated_at: string;
+        deleted_at: string | null;
+        source_swap: {
+            created_at: string;
+            updated_at: string;
+            deleted_at: string | null;
+            swap_id: string;
+            chain: string;
+            asset: string;
+            initiator: string;
+            redeemer: string;
+            timelock: number;
+            filled_amount: string;
+            amount: string;
+            secret_hash: string;
+            secret: string;
+            initiate_tx_hash: string;
+            redeem_tx_hash: string;
+            refund_tx_hash: string;
+            initiate_block_number: string;
+            redeem_block_number: string;
+            refund_block_number: string;
+            required_confirmations: number;
+            current_confirmations: number;
+            initiate_timestamp: string | null;
+            redeem_timestamp: string | null;
+            refund_timestamp: string | null;
+        };
+        destination_swap: {
+            created_at: string;
+            updated_at: string;
+            deleted_at: string | null;
+            swap_id: string;
+            chain: string;
+            asset: string;
+            initiator: string;
+            redeemer: string;
+            timelock: number;
+            filled_amount: string;
+            amount: string;
+            secret_hash: string;
+            secret: string;
+            initiate_tx_hash: string;
+            redeem_tx_hash: string;
+            refund_tx_hash: string;
+            initiate_block_number: string;
+            redeem_block_number: string;
+            refund_block_number: string;
+            required_confirmations: number;
+            current_confirmations: number;
+            initiate_timestamp: string | null;
+            redeem_timestamp: string | null;
+            refund_timestamp: string | null;
+        };
+        create_order: {
+            created_at: string;
+            updated_at: string;
+            deleted_at: string | null;
+            create_id: string;
+            block_number: string;
+            source_chain: string;
+            destination_chain: string;
+            source_asset: string;
+            destination_asset: string;
+            initiator_source_address: string;
+            initiator_destination_address: string;
+            source_amount: string;
+            destination_amount: string;
+            fee: string;
+            nonce: string;
+            min_destination_confirmations: number;
+            timelock: number;
+            secret_hash: string;
+            user_id: string;
+            affiliate_fees: string[];
+            additional_data: {
+                strategy_id: string;
+                bitcoin_optional_recipient: string;
+                input_token_price: number;
+                output_token_price: number;
+                sig: string;
+                deadline: number;
+                tx_hash: string;
+                is_blacklisted: boolean;
+            };
+        };
+    };
+}
